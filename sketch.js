@@ -162,9 +162,9 @@ function updateEcoLevel(isCreature) {
 
 function checkWin() {
   if (matchedPairs === TOTAL_PAIRS) {
-    setTimeout(() => {
-      alert("Bạn đã ghép hết các cặp thẻ! 🎉");
-    }, 400);
+    // Đã bỏ popup alert() mặc định của trình duyệt.
+    // Nếu muốn hiện thông báo thắng game, có thể thêm hiệu ứng riêng ở đây,
+    // ví dụ hiện 1 div overlay chúc mừng thay vì dùng alert().
   }
 }
 
