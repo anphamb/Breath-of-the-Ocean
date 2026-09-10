@@ -272,40 +272,65 @@ img[alt="Background"] {
   top: 3vmin;
   left: 3vmin;
   z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8vmin;
-  padding: 1.4vmin 1.8vmin;
-  border-radius: 1.4vmin;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(6px);
+  width: 27vmin;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
 }
 
-.ph-label {
-  font-family: Apotek, sans-serif;
-  font-weight: 700;
-  font-size: 1.6vmin;
-  letter-spacing: 0.1vmin;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+.ph-blood-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
 }
 
-.ph-bar {
-  width: 22vmin;
-  height: 2.2vmin;
-  border-radius: 1.1vmin;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+/* vị trí thanh xám bên trong hình pH, tính theo % của ảnh gốc (392x92) */
+.ph-bar-track {
+  position: absolute;
+  left: 2.8%;
+  top: 62%;
+  width: 67.9%;
+  height: 28.3%;
+  border-radius: 999px;
   overflow: hidden;
 }
 
 .ph-fill {
   height: 100%;
   width: 100%;
-  border-radius: 1.1vmin;
+  border-radius: 999px;
   background: linear-gradient(90deg, #22c55e, #4ade80);
   transition: width 0.6s ease, background 0.6s ease;
+}
+
+/* nút sound / redo góc phải */
+.top-controls {
+  position: fixed;
+  top: 3vmin;
+  right: 3vmin;
+  z-index: 10;
+  display: flex;
+  gap: 1.4vmin;
+}
+
+.control-btn {
+  width: 6vmin;
+  cursor: pointer;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+  transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+  user-select: none;
+}
+
+.control-btn:hover {
+  transform: scale(1.08);
+}
+
+.control-btn:active {
+  transform: scale(0.94);
+}
+
+.control-btn.muted {
+  opacity: 0.45;
 }
 
 .floating-bubble {
@@ -314,4 +339,37 @@ img[alt="Background"] {
   pointer-events: none;
   user-select: none;
   object-fit: contain;
+}
+
+/* creature thưởng thêm khi ghép hết creature mà pH còn đủ - đặt dưới mặt đất */
+.bonus-creature-wrap {
+  position: fixed;
+  z-index: 6;
+  pointer-events: none;
+  user-select: none;
+  animation: bonusSway var(--sway-duration, 4s) ease-in-out var(--sway-delay, 0s) infinite alternate;
+}
+
+@keyframes bonusSway {
+  0% {
+    transform: translateX(-1.6vw) rotate(-7deg);
+  }
+  100% {
+    transform: translateX(1.6vw) rotate(7deg);
+  }
+}
+
+.bonus-creature {
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: scale(0.3);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bonus-creature.bonus-creature-in {
+  opacity: 1;
+  transform: scale(1);
 }

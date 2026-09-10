@@ -1,4 +1,3 @@
-
 const CARD_CONFIG = [
   { type: "crab",    image: "Image\\COMM2754-2026-S2-A2w08-Breathoftheocean-crab-card.png",    pairs: 1, isCreature: true  },
   { type: "so",      image: "Image\\COMM2754-2026-S2-A2w08-Breathoftheocean-so-card.png",      pairs: 1, isCreature: true  },
@@ -84,6 +83,8 @@ function playBreakingBoneSound() {
 
 
 function playBubbleSound() {
+  if (isMuted) return;
+
   const bubbleAudio = new Audio(SOUND_PATHS.bubble);
 
   const randomVolume =
@@ -111,7 +112,10 @@ let flippedCards = [];
 let lockBoard = false;   
 let ecoLevel = 0;        
 let matchedPairs = 0;
+let creatureMatchedPairs = 0;
+let bonusCreaturesSpawned = false;
 const TOTAL_PAIRS = CARD_CONFIG.reduce((sum, c) => sum + c.pairs, 0);
+const TOTAL_CREATURE_PAIRS = CARD_CONFIG.filter(c => c.isCreature).reduce((sum, c) => sum + c.pairs, 0);
 
 const PH_MAX_HITS = 3;  
 const PH_DANGER_HITS = 2;
@@ -144,6 +148,73 @@ function handlePollutionMatch() {
       el.style.opacity = "0";
     });
   }
+}
+
+function handleCreatureMatch() {
+  
+  const wasDanger = phHits >= PH_DANGER_HITS;
+  phHits = Math.max(0, phHits - 1);
+  updatePhBar();
+
+  
+  if (wasDanger && phHits < PH_DANGER_HITS) {
+    document.querySelectorAll(".creature").forEach(el => {
+      el.style.opacity = "1";
+    });
+  }
+}
+
+
+/* ==== thưởng: sinh thêm crab & so khi ghép hết creature mà pH vẫn còn đủ ==== */
+const BONUS_CRAB_IMAGE = "Image/COMM2754-2026-S2-A2w08-Breathoftheocean-crab.png";
+const BONUS_SO_IMAGE   = "Image/COMM2754-2026-S2-A2w08-Breathoftheocean-so.png";
+const BONUS_SPAWN_PER_TYPE = 5; 
+
+const BONUS_GROUND_TOP_MIN = 68; 
+const BONUS_GROUND_TOP_MAX = 94; 
+
+function spawnBonusCreature(imgSrc) {
+  const wrap = document.createElement("div");
+  wrap.className = "bonus-creature-wrap";
+  wrap.style.top = `${BONUS_GROUND_TOP_MIN + Math.random() * (BONUS_GROUND_TOP_MAX - BONUS_GROUND_TOP_MIN)}vh`;
+  wrap.style.left = `${3 + Math.random() * 90}vw`;
+
+  const swayDuration = (2.6 + Math.random() * 2).toFixed(2);
+  const swayDelay = (Math.random() * 2).toFixed(2);
+  wrap.style.setProperty("--sway-duration", `${swayDuration}s`);
+  wrap.style.setProperty("--sway-delay", `${swayDelay}s`);
+
+  const img = document.createElement("img");
+  img.src = imgSrc;
+  img.className = "creature bonus-creature";
+  img.style.width = `${6 + Math.random() * 3}vmin`;
+
+  wrap.appendChild(img);
+  document.body.appendChild(wrap);
+
+  requestAnimationFrame(() => {
+    img.classList.add("bonus-creature-in");
+  });
+}
+
+function spawnBonusCreatures() {
+  for (let i = 0; i < BONUS_SPAWN_PER_TYPE; i++) {
+    setTimeout(() => spawnBonusCreature(BONUS_CRAB_IMAGE), i * 180);
+    setTimeout(() => spawnBonusCreature(BONUS_SO_IMAGE), i * 180 + 90);
+  }
+}
+
+function clearBonusCreatures() {
+  document.querySelectorAll(".bonus-creature-wrap").forEach(el => el.remove());
+}
+
+function maybeSpawnBonusCreatures() {
+  if (bonusCreaturesSpawned) return;
+  if (creatureMatchedPairs < TOTAL_CREATURE_PAIRS) return;
+  if (phHits >= PH_DANGER_HITS) return; 
+
+  bonusCreaturesSpawned = true;
+  spawnBonusCreatures();
 }
 
 function buildDeck() {
@@ -229,6 +300,10 @@ function checkForMatch() {
       updateEcoLevel(first.data.isCreature);
       if (!first.data.isCreature) {
         handlePollutionMatch();
+      } else {
+        handleCreatureMatch();
+        creatureMatchedPairs++;
+        maybeSpawnBonusCreatures();
       }
       resetTurn();
       checkWin();
@@ -281,19 +356,53 @@ function startGame() {
   const startScreen = document.getElementById("startScreen");
   const bggame = document.getElementById("bggame");
   const phBarContainer = document.getElementById("phBarContainer");
+  const topControls = document.getElementById("topControls");
 
   startScreen.classList.add("hidden");
   bggame.classList.remove("hidden");
   phBarContainer.classList.remove("hidden");
+  topControls.classList.remove("hidden");
 
 
   phHits = 0;
+  matchedPairs = 0;
+  ecoLevel = 0;
+  creatureMatchedPairs = 0;
+  bonusCreaturesSpawned = false;
+  flippedCards = [];
+  lockBoard = false;
+  clearBonusCreatures();
   updatePhBar();
   document.querySelectorAll(".creature").forEach(el => {
     el.style.opacity = "1";
+    el.style.filter = "brightness(1) saturate(1) grayscale(0)";
   });
 
   renderBoard();
+}
+
+
+const ALL_SOUND_ELS = [
+  buttonSoundEl,
+  cardSoundEl,
+  correctSoundEl,
+  incorrectSoundEl,
+  breakingBoneSoundEl,
+];
+
+let isMuted = false;
+
+function toggleMute() {
+  isMuted = !isMuted;
+
+  ALL_SOUND_ELS.forEach(el => {
+    el.muted = isMuted;
+  });
+
+  const soundBtn = document.getElementById("soundBtn");
+  if (soundBtn) {
+    soundBtn.classList.toggle("muted", isMuted);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -301,6 +410,22 @@ document.addEventListener("DOMContentLoaded", () => {
   if (startBtn) {
     startBtn.addEventListener("click", () => {
       playButtonSound(); 
+      startGame();
+    });
+  }
+
+  const soundBtn = document.getElementById("soundBtn");
+  if (soundBtn) {
+    soundBtn.addEventListener("click", () => {
+      toggleMute();
+      if (!isMuted) playButtonSound();
+    });
+  }
+
+  const redoBtn = document.getElementById("redoBtn");
+  if (redoBtn) {
+    redoBtn.addEventListener("click", () => {
+      playButtonSound();
       startGame();
     });
   }
